@@ -96,14 +96,14 @@
         <div class="latent-refine" id="latentRefineBlock">
           <label class="feature-toggle" for="latentRefineEnabled">
             <span><b>Latent 2-pass</b><small>低解像度生成 → 24ch潜在拡大 → 低ノイズ再精製</small></span>
-            <span class="switch"><input id="latentRefineEnabled" type="checkbox" disabled aria-describedby="latentRefineNote"><span></span></span>
+            <span class="switch"><input id="latentRefineEnabled" type="checkbox" aria-describedby="latentRefineNote"><span></span></span>
           </label>
           <div class="latent-refine-settings" id="latentRefineSettings" hidden>
             <label class="field" for="latentRefineModel"><span class="field-label">潜在モデル</span><select id="latentRefineModel"><option value="">検出中…</option></select></label>
-            <label class="field" for="latentRefineStrength"><span class="field-label">再精製の強さ</span><input id="latentRefineStrength" type="number" min="0.05" max="0.6" step="0.05" value="0.35"></label>
-            <label class="field" for="latentRefineSteps"><span class="field-label">再精製 Steps</span><input id="latentRefineSteps" type="number" min="1" max="20" step="1" value="6"></label>
+            <label class="field" for="latentRefineStrength"><span class="field-label">再精製の強さ</span><input id="latentRefineStrength" type="number" min="0.05" max="0.6" step="0.01" value="0.18"></label>
+            <label class="field" for="latentRefineSteps"><span class="field-label">再精製 Steps</span><input id="latentRefineSteps" type="number" min="1" max="20" step="1" value="4"></label>
           </div>
-          <p class="settings-note" id="latentRefineNote">現在利用できません。24ch正規化の修正後、実機での画質再検証待ちです。</p>
+          <p class="settings-note" id="latentRefineNote">対応する検証済み24chモデルがある場合だけ利用できます。初期値はOFFです。</p>
         </div>
         <p class="settings-note">解像度は32の倍数、フレーム数は17k+5に自動調整されます。</p>
       </details>

@@ -550,11 +550,13 @@ function fillLatentUpscalers() {
   });
   const ready = models.filter((item) => item.ready);
   select.value = ready.some((item) => itemValue(item) === previous) ? previous : itemValue(ready[0]);
-  select.disabled = true;
-  toggle.disabled = true;
-  toggle.checked = false;
+  select.disabled = ready.length === 0;
+  toggle.disabled = ready.length === 0;
+  if (!ready.length) toggle.checked = false;
   $('#latentRefineSettings').hidden = !toggle.checked;
-  $('#latentRefineNote').textContent = '現在利用できません。24ch正規化の修正後、実機での画質再検証待ちです。';
+  $('#latentRefineNote').textContent = ready.length
+    ? '低解像度の24ch潜在表現を学習済みモデルで拡大し、指定サイズで低ノイズ再精製します。初期値はOFFです。'
+    : '対応する検証済み24chモデルが未検出のため利用できません。';
   updateGenerateAvailability();
 }
 
@@ -872,8 +874,8 @@ function requestBody() {
       enabled: $('#latentRefineEnabled').checked,
       model: $('#latentRefineEnabled').checked ? ($('#latentRefineModel').value || null) : null,
       scale: 2,
-      strength: clamp($('#latentRefineStrength').value, 0.05, 0.6, 0.35),
-      steps: Math.round(clamp($('#latentRefineSteps').value, 1, 20, 6)),
+      strength: clamp($('#latentRefineStrength').value, 0.05, 0.6, 0.18),
+      steps: Math.round(clamp($('#latentRefineSteps').value, 1, 20, 4)),
     },
   };
 }
@@ -947,10 +949,10 @@ function restoreSettings(request = {}, resolved = {}) {
   $('#loraList').replaceChildren(); (request.loras || []).forEach((item) => addLora(item.path, item.weight, item.enabled));
   setPreset(request.preset || 'balanced'); $('#steps').value = request.steps ?? PRESETS[state.preset].steps;
   const latent = request.latent_refine || {};
-  $('#latentRefineEnabled').checked = false;
+  $('#latentRefineEnabled').checked = Boolean(latent.enabled) && !$('#latentRefineEnabled').disabled;
   if (latent.model) $('#latentRefineModel').value = latent.model;
-  $('#latentRefineStrength').value = latent.strength ?? 0.35;
-  $('#latentRefineSteps').value = latent.steps ?? 6;
+  $('#latentRefineStrength').value = latent.strength ?? 0.18;
+  $('#latentRefineSteps').value = latent.steps ?? 4;
   $('#latentRefineSettings').hidden = !$('#latentRefineEnabled').checked;
   state.engineControl.suspended = false;
   scheduleLoraApply();

@@ -21,10 +21,15 @@ The implementation restores the original Diffusers modular block graph in `final
 
 The complete local H3 pipeline reached MP4 export in job `df767073-3ee5-4d86-9089-b199a504aec3`: 124 frames at 24 FPS and 512×512 from a 256×256 first pass, with 8 Turbo evaluations, learned `B×24×37×16×16 → B×24×37×32×32` latent enlargement, and 4 refinement evaluations at strength `0.18`. The 5.1667-second file contains generated audio and its embedded MP4 JSON exactly matches the sidecar JSON. **This run did not pass visual validation:** frame 60 contains a magenta grid artifact and no usable subject. Matching single-pass runs at both 256×256 and 512×512 render the expected scene, isolating the defect to the two-pass path.
 
-Source comparison found that the standalone upscaler port omitted the released model's required 24-channel mean/std transform before inference and its inverse after inference. That transform is now restored and covered by a CPU contract test. Latent 2-pass remains disabled in both the API and UI until a corrected full GPU run passes visual inspection; the prior artifact is evidence of export/metadata plumbing only.
+Source comparison found that the standalone upscaler port omitted the released model's required 24-channel mean/std transform before inference and its inverse after inference. That transform is now restored and covered by a CPU contract test. The failed artifact remains evidence of the defect and of export/metadata plumbing only.
 
 - Output: `outputs/2026-09-22/h3-generate-df767073.mp4`
 - Generation receipt: `data/qa/h3_two_pass_export_verification.json`
 - Load profile: `data/qa/h3_gpu_load_profile.json`
 
-The GPU-staged INT8 model load reached a maximum process RSS of 73.37 GB while leaving at least 39.45 GB of system memory available; the sampled GPU peak was 68,935 MiB. Turbo8 registered 312 target modules and SageAttention was applied. These measurements validate loading and execution bounds for this 512×512 short run, not two-pass visual quality. The corrected path and the 1344×768 or 345-frame limits still require separate measurements.
+The corrected path then passed two real GPU generations:
+
+- Job `8d623d35`: 256×256 → 512×512, 124 frames, 24 FPS, 8+4 evaluations, strength 0.18. Frames 0/60/123 were inspected; frames 60/123 retain the red mug and woven mat without the former grid. Frame 0 matches the first-pass opening state. The file has audio, decodes to 124 frames and has identical embedded/sidecar metadata. Receipt: `data/qa/latent_corrected_export_verification.json`.
+- Job `e009d9e2`: the default landscape path, 480×288 → 960×544, with the same 124 frames, 24 FPS, 8+4 evaluations and strength 0.18. Frames 0/60/123 retain the red mug, table, chair and window through the camera move without grid artifacts. Audio and metadata match. Receipt: `data/qa/latent_landscape_export_verification.json`; output SHA256 `8af488ea3e38a493b72ad0e2a5545fbb5946c2ae5e1dec9bd951e2003ae000ab`.
+
+Latent 2-pass is therefore available when a pinned checkpoint passes inventory validation, while remaining OFF by default. The validated defaults are strength 0.18 and four refinement evaluations. The GPU-staged INT8 model load reached a maximum process RSS of 73.37 GB while leaving at least 39.45 GB of system memory available; the sampled GPU peak was 68,935 MiB. Turbo8 registered 312 target modules and SageAttention was applied. The 1344×768 and 345-frame limits still require separate quality and memory measurements.

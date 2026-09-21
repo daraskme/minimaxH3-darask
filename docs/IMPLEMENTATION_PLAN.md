@@ -41,8 +41,8 @@ FastAPI は静的 UI、入力検証、アップロード、履歴、出力配信
 - [x] DLSS 5 Neural Renderingの固定runtimeでpreflightと24 framesの実書き出しを行い、feature 18、verified frames、元解像度、CFR、音声packet一致を確認する。
 - [x] 公式フルモデルで T2VA 124 frames を生成し、native audio、Sage dispatch、埋め込み metadata を確認する。
 - [x] Turbo8 の第1パス8 evaluations、shift 12/3、LoRA 312 modules登録を履歴と metadata で確認する。
-- [ ] Latent 2-passはexportまで実行したが、出力にピンク格子が生じ画質不合格。24ch正規化修正後の実機再検証が完了するまでAPI/UIで無効化する。
-- [ ] スタイル LoRA 2 個を異なる重みで適用し、adapter の登録数と順序を確認する。
+- [x] Latent 2-passの24ch正規化を修正し、512×512と標準960×544の124-frame実生成で先頭・中間・末尾の画質、音声、FPS、metadataを確認する。
+- [x] スタイル LoRA 2 個をTurbo8と同時に異なる重みで適用し、adapter の登録数と順序を確認する。映像への個別効果評価は別途行う。
 - [ ] 最初／最後フレーム、モデル切替、キャンセル、後処理再試行をブラウザから確認する。
 
-実機検証は RTX PRO 6000 / 128 GB RAM で行った。512×512、124 frames、24 fps、Turbo8の低解像度8 evaluationsから学習済み24ch潜在拡大を経て高解像度4 evaluationsを実行し、5.1667秒の映像と音声を出力した。MP4埋め込みJSONとsidecarは一致した一方、映像はピンク格子となり画質不合格だった。単パス256×256/512×512は正常で、原因を2パス経路に限定した。upscalerの24ch正規化欠落を修正済みだが、修正版の実機画質確認は未完了である。ロード時の最大host RSSは73.37 GB、最小system freeは39.45 GB、GPU peakは68,935 MiBだった。
+実機検証は RTX PRO 6000 / 128 GB RAM で行った。最初のLatent 2-pass出力は24ch正規化の欠落によりピンク格子となった。修正後、256→512と標準480×288→960×544の両方で、124 frames／24 fps、Turbo8の第1パス8 evaluations、学習済み24ch潜在拡大、高解像度4 evaluations（strength 0.18）を実行した。先頭・中間・末尾フレームで同じ被写体と場面を確認し、格子は消失した。両MP4は5.1667秒、音声付きで、埋め込みJSONとsidecarも一致した。ロード時の最大host RSSは73.37 GB、最小system freeは39.45 GB、GPU peakは68,935 MiBだった。さらにTurbo8 1.0、style LoRA 0.7／0.4をこの順で登録し、対象module数312／312／208とruntime順序を確認した。

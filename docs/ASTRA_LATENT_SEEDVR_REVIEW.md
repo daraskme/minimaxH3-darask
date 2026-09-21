@@ -10,6 +10,10 @@ Installed Diffusers 0.40 source confirms that `MiniMaxH3AfterDenoiseStep` expose
 
 Check that target dimensions are legal, the first pass is genuinely lower resolution, time is unchanged, first/last keyframes are encoded at the second canvas, and original audio latents remain unchanged. Record both canvases, actual schedule, random seeds/noise draw ordering, checkpoint hash and model evaluations in output metadata. Failed or cancelled upscaler/refinement must restore the stock pipeline graph before another job. Unsupported attention-bearing or malformed latent checkpoints must be rejected during discovery/selection rather than advertised as ready and failing later at strict load.
 
+### Later implementation evidence (Sol/root; not an additional Astra review)
+
+The earlier warning above about duplicating normalization was superseded by the pinned model repository's explicit training contract and the upstream inference node: both require `(x - mean) / std` immediately before the learned network and the inverse immediately after it. Omitting that transform produced a magenta grid in the first full run. After restoring it, real 124-frame GPU runs at 512×512 and the default 960×544 both passed visual inspection, audio/FPS checks, full decode and embedded/sidecar metadata comparison. No new Astra agent was available for this final correction because the agent thread limit rejected the launch; this paragraph records Sol/root evidence rather than Astra approval.
+
 ## SeedVR2 adapter findings
 
 The proposed adapter uses the official [ByteDance-Seed/SeedVR 3B inference entry](https://github.com/ByteDance-Seed/SeedVR/blob/main/projects/inference_seedvr2_3b.py) in an isolated runtime. Its reference dependencies include Linux/NCCL, FlashAttention and Apex; the present Windows capability correctly stays unavailable pending a real tested port. An isolated Linux adapter is not evidence that this user's native Windows machine can already run it.

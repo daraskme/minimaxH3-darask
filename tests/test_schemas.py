@@ -56,19 +56,32 @@ def test_last_frame_only_is_supported():
     assert request.last_frame == "abc.png"
 
 
-def test_latent_two_pass_is_gated_pending_visual_revalidation():
-    with pytest.raises(ValidationError, match="temporarily unavailable"):
-        GenerationRequest(
-            **BASE, width=960, height=544,
-            latent_refine={
-                "enabled": True, "model": "3d_conv_v1_fp16.safetensors",
-                "scale": 2, "strength": 0.35, "steps": 6,
-            },
-        )
+def test_latent_two_pass_resolves_low_canvas_and_keeps_target():
+    request = GenerationRequest(
+        **BASE, width=960, height=544,
+        latent_refine={
+            "enabled": True, "model": "3d_conv_v1_fp16.safetensors",
+            "scale": 2, "strength": 0.35, "steps": 6,
+        },
+    )
+    resolved = request.resolved()
+    assert (resolved["width"], resolved["height"]) == (960, 544)
+    assert (resolved["latent_refine"]["low_width"], resolved["latent_refine"]["low_height"]) == (480, 288)
+    assert resolved["latent_refine"]["target_width"] == 960
+    assert resolved["latent_refine"]["target_height"] == 544
+
+
+def test_latent_two_pass_defaults_match_validated_recipe():
+    request = GenerationRequest(
+        **BASE,
+        latent_refine={"enabled": True, "model": "3d_conv_v1_fp16.safetensors"},
+    )
+    assert request.latent_refine.strength == 0.18
+    assert request.latent_refine.steps == 4
 
 
 def test_enabled_latent_two_pass_requires_safe_model():
-    with pytest.raises(ValidationError, match="temporarily unavailable"):
+    with pytest.raises(ValidationError, match="requires a model"):
         GenerationRequest(**BASE, latent_refine={"enabled": True})
     with pytest.raises(ValidationError, match="safe relative path"):
         GenerationRequest(**BASE, latent_refine={"enabled": True, "model": "../model.safetensors"})

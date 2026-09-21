@@ -9,12 +9,6 @@ from .presets import acceleration_recipe, looks_like_acceleration
 from .generation_options import MAX_FRAMES, MIN_FRAMES, NATIVE_FPS, align_frames
 
 
-LATENT_TWO_PASS_AVAILABLE = False
-LATENT_TWO_PASS_UNAVAILABLE_REASON = (
-    "Latent 2-pass is temporarily unavailable while the corrected 24-channel normalization is visually revalidated"
-)
-
-
 class LoraSpec(BaseModel):
     path: str
     weight: float = Field(default=1.0, ge=-4.0, le=4.0)
@@ -33,8 +27,8 @@ class LatentRefineSpec(BaseModel):
     enabled: bool = False
     model: str | None = None
     scale: float = Field(default=2.0, ge=1.1, le=4.0)
-    strength: float = Field(default=0.35, gt=0.0, le=0.6)
-    steps: int = Field(default=6, ge=1, le=20)
+    strength: float = Field(default=0.18, gt=0.0, le=0.6)
+    steps: int = Field(default=4, ge=1, le=20)
 
     @field_validator("model")
     @classmethod
@@ -48,8 +42,6 @@ class LatentRefineSpec(BaseModel):
 
     @model_validator(mode="after")
     def enabled_has_model(self) -> "LatentRefineSpec":
-        if self.enabled and not LATENT_TWO_PASS_AVAILABLE:
-            raise ValueError(LATENT_TWO_PASS_UNAVAILABLE_REASON)
         if self.enabled and not self.model:
             raise ValueError("enabled latent refinement requires a model")
         return self
