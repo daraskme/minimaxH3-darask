@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#090b0f">
+  <meta name="description" content="MiniMax H3をローカルで生成する独立型スタジオ">
+  <title>H3 Studio</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#prompt">プロンプトへ移動</a>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#studio" aria-label="H3 Studio トップ">
+        <span class="brand-mark" aria-hidden="true">H3</span>
+        <span class="brand-copy"><b>Studio</b><small>LOCAL VIDEO WORKSPACE</small></span>
+      </a>
+      <div class="engine-state" id="engineState" role="status" aria-live="polite">
+        <span class="state-light" aria-hidden="true"></span>
+        <span><b id="engineStateTitle">接続しています</b><small id="engineStateDetail">ローカルエンジンを確認中</small></span>
+      </div>
+    </div>
+  </header>
+
+  <nav class="mode-nav" aria-label="処理モード">
+    <button class="mode-tab selected" type="button" data-mode="generate" aria-selected="true"><span aria-hidden="true">◆</span><b>生成</b><small>TEXT / IMAGE TO VIDEO</small></button>
+    <button class="mode-tab" type="button" data-mode="upscale" aria-selected="false"><span aria-hidden="true">↗</span><b>アップスケール</b><small>VIDEO RESOLUTION</small></button>
+    <button class="mode-tab" type="button" data-mode="interpolate" aria-selected="false"><span aria-hidden="true">≋</span><b>フレーム補間</b><small>FRAME RATE</small></button>
+  </nav>
+
+  <main class="workspace" id="studio">
+    <section class="create-panel mode-panel panel" data-mode-panel="generate" aria-labelledby="createTitle">
+      <div class="section-heading">
+        <div><p class="kicker">CREATE</p><h1 id="createTitle">新しい映像</h1></div>
+        <button class="button quiet compact" id="randomSeed" type="button" title="新しいランダムシードを設定"><span aria-hidden="true">↻</span> シード</button>
+      </div>
+
+      <label class="field prompt-field" for="prompt">
+        <span class="field-label">プロンプト</span>
+        <textarea id="prompt" rows="7" maxlength="20000" required placeholder="被写体、動き、カメラ、光、音を自然な文章で記述…" aria-describedby="promptHint"></textarea>
+        <span class="field-foot" id="promptHint"><span>映像と音の意図をひとつの文章で</span><span id="promptCount">0 / 20,000</span></span>
+      </label>
+
+      <fieldset class="frame-fieldset">
+        <legend>参照フレーム <span>任意</span></legend>
+        <div class="frame-grid">
+          <div class="frame-slot" id="firstSlot">
+            <label class="frame-drop" for="firstFile">
+              <input type="file" id="firstFile" accept="image/png,image/jpeg,image/webp">
+              <span class="frame-preview" aria-hidden="true"><span>＋</span></span>
+              <span class="frame-copy"><b>最初のフレーム</b><small>PNG・JPEG・WebP / 32MBまで</small></span>
+            </label>
+            <button class="frame-remove" type="button" aria-label="最初のフレームを削除">×</button>
+            <span class="upload-state" aria-live="polite"></span>
+          </div>
+          <div class="frame-slot" id="lastSlot">
+            <label class="frame-drop" for="lastFile">
+              <input type="file" id="lastFile" accept="image/png,image/jpeg,image/webp">
+              <span class="frame-preview" aria-hidden="true"><span>＋</span></span>
+              <span class="frame-copy"><b>最後のフレーム</b><small>単独指定にも対応</small></span>
+            </label>
+            <button class="frame-remove" type="button" aria-label="最後のフレームを削除">×</button>
+            <span class="upload-state" aria-live="polite"></span>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="preset-fieldset">
+        <legend>生成プリセット</legend>
+        <div class="preset-grid" id="presets">
+          <button type="button" data-preset="balanced" class="selected" aria-pressed="true"><span><b>Balanced</b><small>日常の生成</small></span><em>20 steps</em></button>
+          <button type="button" data-preset="quality" aria-pressed="false"><span><b>Quality</b><small>品質を優先</small></span><em>30 steps</em></button>
+          <button type="button" data-preset="turbo8" aria-pressed="false"><span><b>Turbo 8</b><small>対応モデル / LoRA</small></span><em>8 steps</em></button>
+          <button type="button" data-preset="turbo4" aria-pressed="false"><span><b>Turbo 4</b><small>対応モデル / LoRA</small></span><em>4 steps</em></button>
+        </div>
+        <p class="compat-note" id="presetNote" aria-live="polite"></p>
+      </fieldset>
+
+      <details class="advanced">
+        <summary><span>生成設定</span><span class="summary-value" id="resolved">960 × 544 · 124f · 5.17秒 · 24 FPS（推奨）</span></summary>
+        <div class="settings-grid">
+          <label class="field" for="width"><span class="field-label">幅</span><input id="width" type="number" value="960" min="256" max="2048" step="32" inputmode="numeric"></label>
+          <label class="field" for="height"><span class="field-label">高さ</span><input id="height" type="number" value="544" min="256" max="2048" step="32" inputmode="numeric"></label>
+          <label class="field" for="frames"><span class="field-label">フレーム</span><input id="frames" type="number" value="124" min="124" max="345" step="17" inputmode="numeric"></label>
+          <label class="field" for="steps"><span class="field-label">Steps</span><input id="steps" type="number" value="20" min="1" max="80" inputmode="numeric"></label>
+          <label class="field seed-field" for="seed"><span class="field-label">Seed</span><input id="seed" type="number" value="1" min="0" max="9007199254740991" inputmode="numeric"></label>
+          <label class="field" for="attention"><span class="field-label">Attention</span><select id="attention"><option value="sage">SageAttention</option><option value="sdpa">PyTorch SDPA</option></select></label>
+          <label class="field" for="memoryProfile"><span class="field-label">メモリ</span><select id="memoryProfile"><option value="auto">Auto</option><option value="low_memory">Low memory</option></select></label>
+        </div>
+        <div class="recommendation-block">
+          <div><span class="field-label">おすすめサイズ</span><div class="choice-chips" id="sizePresets" aria-label="おすすめ解像度"></div></div>
+          <div><span class="field-label">長さ · 24 FPS（推奨・固定）</span><div class="choice-chips" id="durationPresets" aria-label="おすすめ動画長"></div></div>
+        </div>
+        <div class="latent-refine" id="latentRefineBlock">
+          <label class="feature-toggle" for="latentRefineEnabled">
+            <span><b>Latent 2-pass</b><small>低解像度生成 → 24ch潜在拡大 → 低ノイズ再精製</small></span>
+            <span class="switch"><input id="latentRefineEnabled" type="checkbox" disabled aria-describedby="latentRefineNote"><span></span></span>
+          </label>
+          <div class="latent-refine-settings" id="latentRefineSettings" hidden>
+            <label class="field" for="latentRefineModel"><span class="field-label">潜在モデル</span><select id="latentRefineModel"><option value="">検出中…</option></select></label>
+            <label class="field" for="latentRefineStrength"><span class="field-label">再精製の強さ</span><input id="latentRefineStrength" type="number" min="0.05" max="0.6" step="0.05" value="0.35"></label>
+            <label class="field" for="latentRefineSteps"><span class="field-label">再精製 Steps</span><input id="latentRefineSteps" type="number" min="1" max="20" step="1" value="6"></label>
+          </div>
+          <p class="settings-note" id="latentRefineNote">現在利用できません。24ch正規化の修正後、実機での画質再検証待ちです。</p>
+        </div>
+        <p class="settings-note">解像度は32の倍数、フレーム数は17k+5に自動調整されます。</p>
+      </details>
+
+      <div class="submit-row">
+        <button id="generate" class="button primary" type="button"><span><i aria-hidden="true"></i><b>生成キューに追加</b></span><kbd>Ctrl ↵</kbd></button>
+        <p id="formError" class="form-message error" role="alert"></p>
+      </div>
+    </section>
+
+    <section class="create-panel mode-panel post-panel panel" data-mode-panel="upscale" aria-labelledby="upscaleTitle" hidden>
+      <div class="section-heading">
+        <div><p class="kicker">UPSCALE</p><h1 id="upscaleTitle">映像を拡大</h1></div>
+        <span class="mode-chip">独立処理</span>
+      </div>
+      <p class="mode-intro">生成済みの映像を残したまま、別の高解像度ファイルを作成します。</p>
+      <div class="source-block" data-source-block="upscale">
+        <div class="source-preview">
+          <video id="upscalePreview" controls preload="metadata" playsinline hidden></video>
+          <div class="source-placeholder"><span aria-hidden="true">▷</span><b>入力映像を選択</b><small>履歴またはローカルファイル</small></div>
+        </div>
+        <label class="field" for="upscaleSource"><span class="field-label">生成履歴から選択</span><select id="upscaleSource"><option value="">完了した映像を選択…</option></select></label>
+        <label class="video-upload" for="upscaleFile"><input id="upscaleFile" type="file" accept="video/mp4,.mp4"><span aria-hidden="true">＋</span><span><b>動画ファイルを使用</b><small>MP4 / 16GBまで</small></span></label>
+        <button class="source-clear text-button" type="button" data-clear-source="upscale" hidden>入力を解除</button>
+        <dl class="source-spec" id="upscaleSourceSpec"><div><dt>入力</dt><dd>—</dd></div><div><dt>FPS</dt><dd>—</dd></div><div><dt>長さ</dt><dd>—</dd></div></dl>
+      </div>
+      <div class="post-settings">
+        <label class="field" for="upscaleMethod"><span class="field-label">方式</span><select id="upscaleMethod"><option value="">検出中…</option></select></label>
+        <label class="field" for="upscaleScale"><span class="field-label">倍率</span><select id="upscaleScale"><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option></select></label>
+      </div>
+      <div class="result-spec"><span>出力</span><b id="upscaleResultSpec">入力映像を選択してください</b></div>
+      <p class="capability-note" id="upscaleCapability" role="status">利用できる方式を確認しています…</p>
+      <div class="submit-row">
+        <button id="enqueueUpscale" class="button primary" type="button" disabled><span><i aria-hidden="true"></i><b>アップスケールをキューに追加</b></span></button>
+        <p id="upscaleError" class="form-message error" role="alert"></p>
+      </div>
+    </section>
+
+    <section class="create-panel mode-panel post-panel panel" data-mode-panel="interpolate" aria-labelledby="interpolateTitle" hidden>
+      <div class="section-heading">
+        <div><p class="kicker">INTERPOLATE</p><h1 id="interpolateTitle">動きを滑らかに</h1></div>
+        <span class="mode-chip">独立処理</span>
+      </div>
+      <p class="mode-intro">解像度と元映像を保持し、補間フレームを別の映像として書き出します。</p>
+      <div class="source-block" data-source-block="interpolate">
+        <div class="source-preview">
+          <video id="interpolatePreview" controls preload="metadata" playsinline hidden></video>
+          <div class="source-placeholder"><span aria-hidden="true">▷</span><b>入力映像を選択</b><small>履歴またはローカルファイル</small></div>
+        </div>
+        <label class="field" for="interpolateSource"><span class="field-label">生成履歴から選択</span><select id="interpolateSource"><option value="">完了した映像を選択…</option></select></label>
+        <label class="video-upload" for="interpolateFile"><input id="interpolateFile" type="file" accept="video/mp4,.mp4"><span aria-hidden="true">＋</span><span><b>動画ファイルを使用</b><small>MP4 / 16GBまで</small></span></label>
+        <button class="source-clear text-button" type="button" data-clear-source="interpolate" hidden>入力を解除</button>
+        <dl class="source-spec" id="interpolateSourceSpec"><div><dt>入力</dt><dd>—</dd></div><div><dt>FPS</dt><dd>—</dd></div><div><dt>長さ</dt><dd>—</dd></div></dl>
+      </div>
+      <div class="post-settings">
+        <label class="field" for="interpolateMethod"><span class="field-label">方式</span><select id="interpolateMethod"><option value="">検出中…</option></select></label>
+        <label class="field" for="interpolateFactor"><span class="field-label">フレーム倍率</span><select id="interpolateFactor"><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option></select></label>
+      </div>
+      <div class="result-spec"><span>出力</span><b id="interpolateResultSpec">入力映像を選択してください</b></div>
+      <p class="capability-note" id="interpolateCapability" role="status">利用できる方式を確認しています…</p>
+      <div class="submit-row">
+        <button id="enqueueInterpolate" class="button primary" type="button" disabled><span><i aria-hidden="true"></i><b>フレーム補間をキューに追加</b></span></button>
+        <p id="interpolateError" class="form-message error" role="alert"></p>
+      </div>
+    </section>
+
+    <aside class="control-column" aria-label="モデルと実行環境">
+      <section class="panel model-panel" aria-labelledby="modelTitle">
+        <div class="section-heading compact-heading">
+          <div><p class="kicker">MODEL</p><h2 id="modelTitle">モデル</h2></div>
+          <button id="refresh" class="button icon-button" type="button" aria-label="モデル一覧を再読み込み" title="再読み込み">↻</button>
+        </div>
+        <label class="field" for="model"><span class="field-label">H3 pipeline</span><select id="model" aria-describedby="modelHealth"><option>読み込み中…</option></select></label>
+        <div class="model-health" id="modelHealth" role="status"><span class="mini-spinner" aria-hidden="true"></span><span>モデルを確認しています</span></div>
+        <button id="loadModel" class="button model-load" type="button" disabled><span aria-hidden="true">↓</span><span><b>モデルを読み込む</b><small id="loadModelHint">選択したモデルをGPU実行環境へ準備</small></span></button>
+        <div class="directory-row">
+          <span><small>モデルディレクトリ</small><code id="modelRoot">確認中…</code></span>
+        </div>
+      </section>
+
+      <section class="panel lora-panel" aria-labelledby="loraTitle">
+        <div class="section-heading compact-heading">
+          <div><p class="kicker">STACK</p><h2 id="loraTitle">LoRA</h2></div>
+          <button id="addLora" class="button icon-button" type="button" aria-label="LoRAを追加" title="LoRAを追加">＋</button>
+        </div>
+        <p class="panel-help">上から順に適用します。最大16件まで。</p>
+        <div id="loraList" class="lora-list" aria-live="polite"></div>
+        <div id="loraEmpty" class="inline-empty">LoRAは選択されていません</div>
+      </section>
+
+      <details class="panel runtime-panel">
+        <summary><span><span class="kicker">RUNTIME</span><b id="runtimeTitle">実行環境</b></span><span id="runtimeSummary">確認中…</span></summary>
+        <dl class="runtime-list" id="runtimeList"><div><dt>GPU</dt><dd>確認中…</dd></div></dl>
+        <div class="feature-tags" id="featureTags"></div>
+        <div class="vc-note" id="vcNote"><span class="info-icon" aria-hidden="true">i</span><p><b>VC-Attention</b><span>論文と同等の実装を確認できないため利用できません。</span></p></div>
+      </details>
+    </aside>
+
+    <section class="outputs-panel panel" aria-labelledby="outputsTitle">
+      <div class="section-heading outputs-heading">
+        <div><p class="kicker">OUTPUTS</p><h2 id="outputsTitle">処理履歴</h2></div>
+        <div class="output-tools">
+          <span class="queue-summary" id="queueSummary" aria-live="polite">履歴を読み込み中</span>
+          <button class="button quiet compact" id="openOutputs" type="button"><span aria-hidden="true">↗</span> outputsを開く</button>
+        </div>
+      </div>
+      <div id="history" class="gallery" aria-live="polite" aria-busy="true">
+        <div class="empty-state"><span class="empty-symbol" aria-hidden="true">◇</span><b>処理履歴を読み込んでいます</b><span>少し待ってから表示されます</span></div>
+      </div>
+    </section>
+  </main>
+
+  <template id="loraTemplate">
+    <div class="lora-row" draggable="true">
+      <button class="lora-handle" type="button" aria-label="ドラッグして並べ替え" title="ドラッグして並べ替え">⠿</button>
+      <label class="switch" title="有効 / 無効"><input class="lora-enabled" type="checkbox" checked><span></span><span class="sr-only">LoRAを有効にする</span></label>
+      <select class="lora-name" aria-label="LoRAファイル"></select>
+      <label class="weight-wrap"><span>強度</span><input class="lora-weight" aria-label="LoRAの強度" type="number" value="1" min="-4" max="4" step="0.05"></label>
+      <button class="lora-remove" type="button" aria-label="LoRAを削除" title="削除">×</button>
+    </div>
+  </template>
+
+  <div class="toast-region" id="toasts" aria-live="polite" aria-atomic="false"></div>
+  <script src="/assets/app.js"></script>
+</body>
+</html>

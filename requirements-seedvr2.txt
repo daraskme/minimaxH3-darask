@@ -1,0 +1,7 @@
+# Native Windows dependencies for the pinned standalone SeedVR2 runtime.
+# Torch/TorchVision and the H3 Studio base requirements are installed separately.
+opencv-python==4.13.0.92
+omegaconf==2.3.0
+gguf==0.17.1
+rotary-embedding-torch==0.8.9
+matplotlib==3.10.8

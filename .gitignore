@@ -1,0 +1,12 @@
+.venv/
+.cache/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+/data/
+/outputs/
+/logs/
+models/*
+!models/.gitkeep
+tools/dlss_exporter/bin/
+config.json
